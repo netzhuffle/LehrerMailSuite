@@ -7,6 +7,19 @@ $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
         ),
 ));
 
+$app->register(new Dflydev\Silex\Provider\DoctrineOrm\DoctrineOrmServiceProvider, array(
+        "orm.proxies_dir" => __DIR__.'/../cache/orm/proxies',
+        "orm.em.options" => array(
+                "mappings" => array(
+                        array(
+                                'type' => 'annotation',
+                                'namespace' => 'Netzhuffle\Entities',
+                                'path' => __DIR__.'/../src/Netzhuffle/Entities',
+                        ),
+                ),
+        ),
+));
+
 $app->register(new Silex\Provider\SecurityServiceProvider(), array(
         'security.firewalls' => array(
             'admin' => array(

@@ -1,44 +1,27 @@
 {% extends "layout.html" %}
 
+{% block title 'Eulenliste' %}
+
 {% block content %}
     <table>
     	<tr>
-    		<th>id</th>
     		<th>recipient</th>
     		<th>sender</th>
     		<th>frommail</th>
     		<th>subject</th>
-    		<th>bodyplain</th>
     		<th>strippedtext</th>
     		<th>strippedsignature</th>
-    		<th>bodyhtml</th>
-    		<th>strippedhtml</th>
-    		{# <th>messageheaders</th> #}
     		<th>spam</th>
-    		<th>spamscore</th>
-    		<th>dkimresult</th>
-    		<th>spf</th>
-    		<th>timestamp</th>
     		<th>datetime</th>
     	</tr>
     	{% for mail in mails %}
     		<tr>
-	    		<th>{{ mail.id }}</th>
 	    		<th>{{ mail.recipient }}</th>
 	    		<th>{{ mail.sender }}</th>
-	    		<th>{{ mail.frommail }}</th>
-	    		<th>{{ mail.subject }}</th>
-	    		<th>{{ mail.bodyplain }}</th>
-	    		<th>{{ mail.strippedtext }}</th>
-	    		<th>{{ mail.strippedsignature }}</th>
-	    		<th>{{ mail.bodyhtml }}</th>
-	    		<th>{{ mail.strippedhtml }}</th>
-	    		{# <th>{{ mail.messageheaders }}</th> #}
+	    		<th>{{ mail.originalFrom }}</th>
+	    		<th>{{ mail.strippedText }}</th>
+	    		<th>{{ mail.strippedSignature }}</th>
 	    		<th>{{ mail.spam }}</th>
-	    		<th>{{ mail.spamscore }}</th>
-	    		<th>{{ mail.dkimresult }}</th>
-	    		<th>{{ mail.spf }}</th>
-	    		<th>{{ mail.timestamp|date("j.n.Y H:i:s") }}</th>
 	    		<th>{{ mail.datetime|date("j.n.Y H:i:s") }}</th>
     		</tr>
     	{% endfor %}

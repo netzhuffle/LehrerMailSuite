@@ -3,13 +3,15 @@
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Mailgun\Mailgun;
+use Netzhuffle\Entities\Mail;
+use Netzhuffle\Entities\Attachment;
 
 $app->get('/', function () use ($app) {
     return $app['twig']->render('index.html', array());
 });
 
 $app->get('/in/list', function () use ($app) {
-    $mails = $app['db']->query('SELECT * FROM mails')->fetchAll();
+    $mails = $app['orm.em']->createQuery('SELECT m FROM Netzhuffle\Entities\Mail m')->getResult();
 
     return $app['twig']->render('list.html', array(
         'mails' => $mails,
@@ -24,40 +26,40 @@ $app->post('/mailgun', function (Request $request) use ($app) {
         $app->abort(403, 'signature is wrong');
     }
 
-    $app['db']->insert('mails', array(
-        'recipient' => $request->request->get('recipient'),
-        'sender' => $request->request->get('sender'),
-        'frommail' => $request->request->get('from'),
-        'subject' => $request->request->get('subject'),
-        'bodyplain' => $request->request->get('body-plain'),
-        'strippedtext' => $request->request->get('stripped-text'),
-        'strippedsignature' => $request->request->get('stripped-signature'),
-        'bodyhtml' => $request->request->get('body-html'),
-        'strippedhtml' => $request->request->get('stripped-html'),
-        'messageheaders' => $request->request->get('message-headers'),
-        'spam' => $request->request->get('X-Mailgun-Sflag'),
-        'spamscore' => $request->request->get('X-Mailgun-Sscore'),
-        'dkimresult' => $request->request->get('X-Mailgun-Dkim-Check-Result'),
-        'spf' => $request->request->get('X-Mailgun-Spf'),
-        'timestamp' => $request->request->get('timestamp'),
-        'datetime' => $request->request->get('Date'),
-    ));
-    $mailId = $app['db']->lastInsertId();
+    $mail = new Mail();
+    $mail->setRecipient($request->request->get('recipient'));
+    $mail->setSender($request->request->get('sender'));
+    $mail->setOriginalFrom($request->request->get('from'));
+    $mail->setSubject($request->request->get('subject'));
+    $mail->setBodyPlain($request->request->get('body-plain'));
+    $mail->setStrippedText($request->request->get('stripped-text'));
+    $mail->setStrippedSignature($request->request->get('stripped-signature'));
+    $mail->setBodyHtml($request->request->get('body-html'));
+    $mail->setStrippedHtml($request->request->get('stripped-html'));
+    $mail->setMessageHeaders($request->request->get('message-headers'));
+    $mail->setSpam($request->request->get('X-Mailgun-Sflag'));
+    $mail->setSpamScore($request->request->get('X-Mailgun-Sscore'));
+    $mail->setDkimResult($request->request->get('X-Mailgun-Dkim-Check-Result'));
+    $mail->setSpf($request->request->get('X-Mailgun-Spf'));
+    $mail->setDatetime($request->request->get('timestamp'));
+    $mail->setOriginalDatetime($request->request->get('Date'));
+    $app['orm.em']->persist($mail);
 
     $attachmentCount = $request->request->get('attachment-count');
     for ($i = 1; $i <= $attachmentCount; $i++) {
+        $attachment = new Attachment();
         $file = $request->files->get('attachment-' . $i);
         $extension = $file->guessExtension();
-        $newName = 'att' . $mailId . '-' . $i . ($extension ? '.' . $extension : '');
-        $app['db']->insert('attachments', array(
-            'mail' => $mailId,
-            'mimetype' => $file->getMimeType(),
-            'originalname' => $file->getClientOriginalName(),
-            'newname' => $newName,
-            'size' => $file->getClientSize(),
-        ));
-        $file->move(__DIR__.'/../attachments', $newName);
+        $attachment->setMail($mail);
+        $attachment->setMimetype($file->getMimeType());
+        $attachment->setOriginalName($file->getClientOriginalName());
+        $attachment->setNewName(sha1(uniqid(mt_rand(), true)) . ($extension ? '.' . $extension : ''));
+        $attachment->setSize($file->getClientSize());
+        $file->move(__DIR__.'/../attachments', $attachment->getNewName());
+        $app['orm.em']->persist($attachment);
     }
+    
+    $app['orm.em']->flush();
 
     return '';
 });
